@@ -1,17 +1,23 @@
 "use client"
 
 import { useState, useMemo, useEffect, type KeyboardEvent } from "react"
-import dynamic from "next/dynamic"
-import "react-quill/dist/quill.snow.css"
+import Editor, {
+  Toolbar,
+  BtnBold,
+  BtnUnderline,
+  BtnItalic,
+  BtnNumberedList,
+  BtnBulletList,
+  BtnClearFormatting,
+  EditorProvider,
+  ContentEditableEvent,
+} from "react-simple-wysiwyg"
 import { collection, addDoc, updateDoc, deleteDoc, onSnapshot, doc, query, orderBy } from "firebase/firestore"
 import { onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth"
 import { db, auth, googleProvider } from "../src/lib/firebase"
 
 // 허용된 이메일 (환경변수로 관리)
 const allowedEmail = process.env.NEXT_PUBLIC_ALLOWED_EMAIL
-
-// ReactQuill (동적 로딩 – SSR 비활성화)
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false }) as any
 
 // NOTE 타입을 이 파일 안에서 정의합니다.
 type Note = {
@@ -226,17 +232,6 @@ function NoteDetail({ note, onUpdate, onDelete }: NoteDetailProps) {
       ? "text-2xl md:text-3xl"
       : "text-lg md:text-xl"
 
-  const quillModules = {
-    toolbar: [
-      [{ header: [false, 1, 2, 3] }],
-      ["bold"],
-      [{ color: [] }],
-      ["clean"],
-    ],
-  }
-
-  const quillFormats = ["header", "bold", "color"]
-
   return (
     <div className="rounded-lg border border-border bg-card p-4 md:p-5 flex flex-col gap-4 min-h-[320px] md:min-h-[460px]">
       <div className="flex items-start justify-between gap-3">
@@ -302,17 +297,30 @@ function NoteDetail({ note, onUpdate, onDelete }: NoteDetailProps) {
           <span>굵게 / 크기 / 색상을 조절해 보세요.</span>
         </div>
         <div className="h-[260px] md:h-[360px] w-full overflow-hidden break-words">
-          {/* ReactQuill은 클라이언트에서만 렌더링됩니다. */}
-          <ReactQuill
-            theme="snow"
-            value={content}
-            onChange={setContent}
-            onBlur={handleContentBlur as any}
-            modules={quillModules}
-            formats={quillFormats}
-            className="h-full [&_.ql-container]:h-[calc(100%-2.25rem)] [&_.ql-editor]:text-sm"
-            placeholder="내용을 입력하세요..."
-          />
+          <EditorProvider>
+            <Editor
+              value={content}
+              onChange={(e: ContentEditableEvent) => setContent(e.target.value)}
+              onBlur={handleContentBlur as any}
+              placeholder="내용을 입력하세요..."
+              containerProps={{
+                style: {
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                },
+              }}
+            >
+              <Toolbar>
+                <BtnBold />
+                <BtnItalic />
+                <BtnUnderline />
+                <BtnNumberedList />
+                <BtnBulletList />
+                <BtnClearFormatting />
+              </Toolbar>
+            </Editor>
+          </EditorProvider>
         </div>
       </div>
     </div>
@@ -684,5 +692,3 @@ export default function Page() {
     </main>
   )
 }
-/ /   f o r c e   r e d e p l o y  
- 
